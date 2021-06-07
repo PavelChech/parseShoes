@@ -1,6 +1,6 @@
 import scrapy
 import datetime
-import processing_for_spider
+import re
 
 
 class ShoesSpider(scrapy.Spider):
@@ -21,11 +21,11 @@ class ShoesSpider(scrapy.Spider):
 
     def parse(self, response, **kwargs):
         timestamp = datetime.datetime.now().timestamp()
-        RPC = response.xpath("//div[@class = 'article']/span/text()").extraxt_first()
-        color = response.xpath("//span[@class = 'color']/text()").extraxt_first()
+        RPC = response.xpath("//div[@class = 'article']/span/text()").extract_first()
+        color = response.xpath("//span[@class = 'color']/text()").extract_first()
         url = response.url
         # title
-        marketing_tags = processing_for_spider.clear_list_from_spaces(processing_for_spider.remove_empty_strs(
+        marketing_tags = self.clear_list_from_spaces(self.remove_empty_strs(
             response.xpath("//li[contains(@class,'about-advantages-item')]/text()").extract()))
 
         result = {
@@ -47,3 +47,23 @@ class ShoesSpider(scrapy.Spider):
                 '''
 
         return result
+
+
+    def get_digits_from_str(self, string):
+        # Используем для выделения числа из цены
+        digits = string.replace('\xa0', '')
+        digits = float(re.search(r'\d+', digits).group(0))
+        return digits
+
+
+    def clear_list_from_spaces(self, other_list):
+        # Очистить элементы (строки) списка от пробелов
+        new_list = []
+        [new_list.append(elem.replace('\n', '').strip()) for elem in other_list]
+        return new_list
+
+
+    def remove_empty_strs(self, other_list):
+        new_list = []
+        [new_list.append(string) for string in other_list if string]
+        return new_list
