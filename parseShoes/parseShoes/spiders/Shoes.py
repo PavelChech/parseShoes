@@ -27,14 +27,16 @@ class ShoesSpider(scrapy.Spider):
 
         url = response.url
 
-        # title
+        title = ''.join(self.remove_empty_strs(response.xpath("//span[@class = 'name ']/text()").extract_first().split('/')[0]))
+        if color:
+            title = f"{title}, {color}"
 
         marketing_tags = self.clear_list_from_spaces(self.remove_empty_strs(
             response.xpath("//li[contains(@class,'about-advantages-item')]/text()").extract()))
 
         brand = response.xpath("//span[@class = 'brand']/text()").extract_first()
 
-        section = self.remove_empty_strs(response.xpath("//span[@class = 'name ']/text()").extract_first().split('/'))
+        section = self.remove_empty_strs(response.xpath("//span[@class = 'name ']/text()").extract_first().split('/')[1:])
 
         current_price = self.get_digits_from_str(response.xpath("//span[@class = 'final-cost']/text()").extract_first())
         original_price = self.get_digits_from_str(response.xpath("//del[@class = 'c-text-base']/text()").extract_first())
@@ -42,19 +44,35 @@ class ShoesSpider(scrapy.Spider):
         if original_price:
             sale_tag = f"Скидка: {round(current_price / original_price * 100)}%"
 
+        main_image = response.xpath("//img[@class = 'preview-photo j-zoom-preview']/@src").extract_first()
+        set_images = response.xpath("//span[@class = 'slider-content']/img/@src").extract()
+        view = response.xpath("//span[@class = 'slider-content thumb_3d']/img/@src").extract_first()
+        video =''
+
+        variants = len(response.xpath("//li[contains(@class, 'color-v1')]/a").extract())
+
         result = {
             "timestamp": timestamp,
             "RPC": RPC,
             "color": color,
             "url": url,
-            #"title" : title,
-            "marketing_tags": marketing_tags,
+            "title" : title,
+            "marketing tags": marketing_tags,
             "brand": brand,
             "section": section,
-            "price_data": {"current": current_price,
+            "price data": {"current": current_price,
                           "original": original_price,
-                          "sale_tag": sale_tag}
-            
+                          "sale_tag": sale_tag},
+            #"stock":{"in stock": ,"count": 0}
+            "assets": {"main image": main_image,
+                       "set images": set_images,
+                       "view360": view,
+                       "video": video},
+            '''"metadata": {"description": description,
+                         "articul": ,
+                         "country": ,
+            }'''
+            "variants": variants
         }
 
         '''
