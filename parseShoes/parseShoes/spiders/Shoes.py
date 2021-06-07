@@ -8,16 +8,27 @@ class ShoesSpider(scrapy.Spider):
     allowed_domains = ['www.wildberries.ru']
     start_urls = ['http://www.wildberries.ru']
     pages_count = 6
+    cookie = {'__region': '64_75_4_38_30_33_70_1_22_31_66_40_71_69_80_48_68',
+                  '__store': '119261_122252_122256_117673_122258_122259_121631_122466_122467_122495_122496_122498_122590_122591_122592_123816_123817_123818_123820_123821_123822_124093_124094_124095_124096_124097_124098_124099_124100_124101_124583_124584_125611_116433_6159_507_3158_117501_120762_119400_120602_6158_121709_2737_117986_1699_1733_686_117413_119070_118106_119781',
+                  '__wbl': 'cityId%3D77%26regionId%3D77%26city%3D%D0%9C%D0%BE%D1%81%D0%BA%D0%B2%D0%B0%26phone%3D84957755505%26latitude%3D55%2C7247%26longitude%3D37%2C7882',
+                  'ncache': '119261_122252_122256_117673_122258_122259_121631_122466_122467_122495_122496_122498_122590_122591_122592_123816_123817_123818_123820_123821_123822_124093_124094_124095_124096_124097_124098_124099_124100_124101_124583_124584_125611_116433_6159_507_3158_117501_120762_119400_120602_6158_121709_2737_117986_1699_1733_686_117413_119070_118106_119781%3B64_75_4_38_30_33_70_1_22_31_66_40_71_69_80_48_68%3B1.0--%3B12_3_18_15_21%3B%3B0',
+                  'route': '5a25b90133d5524bd16297bd4f3f280681faf08e'
+                  }
+
 
     def start_requests(self):
         for page in range(1, 1 + self.pages_count):
             url = f'https://www.wildberries.ru/catalog/muzhchinam/spetsodezhda/rabochaya-obuv?sort=popular&page={page}'
-            yield scrapy.Request(url, callback=self.parse_pages)
+            yield scrapy.Request(url, callback=self.parse_pages, dont_filter=True,
+                                 cookies=self.cookie_msc,
+                                 meta={'dont_merge_cookies': True})
 
     def parse_pages(self, response):
         for href in response.xpath("//a[contains(@class, 'ref_goods_n_p')]/@href").extract():
             url = response.urljoin(href)
-            yield scrapy.Request(url, callback=self.parse)
+            yield scrapy.Request(url, callback=self.parse, dont_filter=True,
+                                 cookies=self.cookie_msc,
+                                 meta={'dont_merge_cookies': True})
 
     def parse(self, response, **kwargs):
         timestamp = datetime.datetime.now().timestamp()
