@@ -7,7 +7,7 @@ class ShoesSpider(scrapy.Spider):
     name = 'Shoes'
     allowed_domains = ['www.wildberries.ru']
     start_urls = ['http://www.wildberries.ru']
-    pages_count = 5
+    pages_count = 6
 
     def start_requests(self):
         for page in range(1, 1 + self.pages_count):
@@ -88,12 +88,7 @@ class ShoesSpider(scrapy.Spider):
                          "metadata": metadata},
             "variants": variants
         }
-
-        '''
-                metadata
-                '''
-
-        return result
+        yield result
 
 
     def get_digits_from_str(self, string):
