@@ -22,24 +22,42 @@ class ShoesSpider(scrapy.Spider):
     def parse(self, response, **kwargs):
         timestamp = datetime.datetime.now().timestamp()
         RPC = response.xpath("//div[@class = 'article']/span/text()").extract_first()
+
         color = response.xpath("//span[@class = 'color']/text()").extract_first()
+
         url = response.url
+
         # title
+
         marketing_tags = self.clear_list_from_spaces(self.remove_empty_strs(
             response.xpath("//li[contains(@class,'about-advantages-item')]/text()").extract()))
+
+        brand = response.xpath("//span[@class = 'brand']/text()").extract_first()
+
+        section = self.remove_empty_strs(response.xpath("//span[@class = 'name ']/text()").extract_first().split('/'))
+
+        current_price = self.get_digits_from_str(response.xpath("//span[@class = 'final-cost']/text()").extract_first())
+        original_price = self.get_digits_from_str(response.xpath("//del[@class = 'c-text-base']/text()").extract_first())
+        sale_tag = ""
+        if original_price:
+            sale_tag = f"Скидка: {round(current_price / original_price * 100)}%"
 
         result = {
             "timestamp": timestamp,
             "RPC": RPC,
             "color": color,
             "url": url,
-            "marketing_tags": marketing_tags
+            #"title" : title,
+            "marketing_tags": marketing_tags,
+            "brand": brand,
+            "section": section,
+            "price_data": {"current": current_price,
+                          "original": original_price,
+                          "sale_tag": sale_tag}
+            
         }
 
         '''
-                brand
-                section
-                price_data - currnt, orig, sale_tag
                 stock
                 assets
                 metadata
