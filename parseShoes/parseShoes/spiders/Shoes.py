@@ -21,6 +21,7 @@ class ShoesSpider(scrapy.Spider):
 
     def parse(self, response, **kwargs):
         timestamp = datetime.datetime.now().timestamp()
+
         RPC = response.xpath("//div[@class = 'article']/span/text()").extract_first()
 
         color = response.xpath("//span[@class = 'color']/text()").extract_first()
@@ -31,12 +32,13 @@ class ShoesSpider(scrapy.Spider):
         if color:
             title = f"{title}, {color}"
 
-        marketing_tags = self.clear_list_from_spaces(self.remove_empty_strs(
+        marketing_tags = self.remove_empty_strs(self.clear_list_from_spaces(
             response.xpath("//li[contains(@class,'about-advantages-item')]/text()").extract()))
 
         brand = response.xpath("//span[@class = 'brand']/text()").extract_first()
 
-        section = self.remove_empty_strs(response.xpath("//span[@class = 'name ']/text()").extract_first().split('/')[1:])
+        section = self.remove_empty_strs(self.clear_list_from_spaces(
+            response.xpath("//span[@class = 'name ']/text()").extract_first().split('/')[1:]))
 
         current_price = self.get_digits_from_str(response.xpath("//span[@class = 'final-cost']/text()").extract_first())
         original_price = self.get_digits_from_str(response.xpath("//del[@class = 'c-text-base']/text()").extract_first())
@@ -44,10 +46,23 @@ class ShoesSpider(scrapy.Spider):
         if original_price:
             sale_tag = f"Скидка: {round(current_price / original_price * 100)}%"
 
+        all_sizes = len(response.xpath("//div[contains(@class, 'size-list')]/label").extract())
+        miss_sizes = len(response.xpath("//div[contains(@class, 'size-list')]/label[contains(@class, 'disabled')]").extract())
+        in_stock =  miss_sizes < all_sizes
+
         main_image = response.xpath("//img[@class = 'preview-photo j-zoom-preview']/@src").extract_first()
         set_images = response.xpath("//span[@class = 'slider-content']/img/@src").extract()
         view = response.xpath("//span[@class = 'slider-content thumb_3d']/img/@src").extract_first()
         video =''
+
+        description = response.xpath("//div[contains(@class, 'j-description collapsable-content description-text')]/p/text()").extract_first()
+
+        keys = response.xpath("//div[contains(@class, 'pp')]/span/b/text()").extract()
+        value = self.remove_empty_strs(self.clear_list_from_spaces(
+            response.xpath("//div[contains(@class, 'pp')]/span/text()").extract()))
+        metadata = {"Артикул": RPC, "Цвет": color}
+        metadata.update({keys[i]:value[i] for i in range(len(keys))})
+
 
         variants = len(response.xpath("//li[contains(@class, 'color-v1')]/a").extract())
 
@@ -63,23 +78,19 @@ class ShoesSpider(scrapy.Spider):
             "price data": {"current": current_price,
                           "original": original_price,
                           "sale_tag": sale_tag},
-            #"stock":{"in stock": ,"count": 0}
+            "stock":{"in stock": in_stock,
+                     "count": 0},
             "assets": {"main image": main_image,
                        "set images": set_images,
                        "view360": view,
                        "video": video},
-            '''"metadata": {"description": description,
-                         "articul": ,
-                         "country": ,
-            }'''
+            "metadata": {"description": description,
+                         "metadata": metadata},
             "variants": variants
         }
 
         '''
-                stock
-                assets
                 metadata
-                variants
                 '''
 
         return result
